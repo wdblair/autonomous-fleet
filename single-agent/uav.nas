@@ -4,11 +4,14 @@
 #
 # An auto pilot system for the Boeing 777-200 written in Nasal, the
 # scripting language embedded in Flightgear. This is basically an
-# event driven system that utilizes FlightGears internal PID 
-# implementation.
+# event driven system that utilizes FlightGears internal PID
+# implementation to maintain control laws.
+#
+# In this file, we present an interface for using behavior trees
+# to implement AIs.
 #
 # Will Blair, George Chapman
-###
+### 
 
 # Pitch
 # /uav/locks/altitude
@@ -154,22 +157,37 @@ var never = func {
     return 0;
 };
 
+var noop = func {
+    return ;
+};
+
 # Create a node in the tree.
-var make_tree = func (activate, visit) {
+
+var make_tree = func () {
     return {
-        active: activate,
+        active: never,
         expire: never,
-        visit: visit,
+        visit: noop,
         children: [],
-        then: func (activate, visit) {
-            var tr = make_tree(activate, visit);
-            append(me.children, tr);
-            return tr;
+        activates: func (activate) {
+            me.active = activate;
+
+            return me;
+        },
+        then: func (visit) {
+            me.visit = visit;
+
+            return me;
         },
         expires: func (expire) {
             me.expire = expire;
             
             return me;
+        },
+        when: func (activate) {
+            var tr = make_tree().activates(activate);
+            append(me.children, tr);
+            return tr;
         }
     };
 };
@@ -214,35 +232,26 @@ var begin_takeoff = func {
 };
 
 #Build the root of our tree.
-var setup = make_tree (begin_takeoff, setup);
+var setup = make_tree().activates(begin_takeoff).then(setup);
 
 #Describe the first two steps
-var liftoff = setup.then (
-    ready_to_tip_nose, 
-    tip_nose
-).then (
-    ready_to_rise,
-    rise
-);
+var liftoff = setup
+    .when (ready_to_tip_nose)
+    .then (tip_nose)
+    .when (ready_to_rise)
+    .then (rise);
 
 #Set the flaps to go down as we speed up.
-liftoff.then (
-    ready_withdraw_flaps,
-    withdraw_flaps
-).then (
-    ready_withdraw_flaps1,
-    withdraw_flaps1
-).then (
-    ready_retract_flaps,
-    retract_flaps
-);
+liftoff.when (ready_withdraw_flaps).then (withdraw_flaps)
+    .when (ready_withdraw_flaps1).then (withdraw_flaps1)
+    .when (ready_retract_flaps).then (retract_flaps);
 
 #Set how to get to our cruising position
-liftoff.then (func {
+liftoff.when (func {
     var alt = getprop ('/position/altitude-ft');
     
     return alt > 10000.0;
-}, func {
+}).then(func {
     # Once we climb to a standard height, we can climb at a variable
     # rate to reach a target altitude.
     var desired_height = getprop (uav, pln, 'altitude');
@@ -253,7 +262,7 @@ liftoff.then (func {
     }
     
     setprop (uav, lks, 'altitude-hold', 'on');
-}).then (func {
+}).when (func {
     var alt = getprop ('/position/altitude-ft');
     var tgt = getprop (uav, pln, 'altitude');
 
@@ -264,30 +273,32 @@ liftoff.then (func {
         return a;
     };
 
+    var mode = getprop(uav, pln, 'mode');
+
     #Check if within 500 ft of our target altitude
-    return abs(alt - tgt) < 500.0;
-}, func {
+    return abs(alt - tgt) < 500.0 and mode == 'cruise';
+}).then(func {
     #Speed up a bit for cruising
     setprop (uav, stg, 'target-speed-kt', 300.0);
 });
 
 #Set the landing gear down
-liftoff.then (func {
+liftoff.when (func {
     var speed = getprop ('/velocities/airspeed-kt');
     
     return speed >= 200.0;
-}, func {
+}).then(func {
     #Turn off the landing gear
     setprop ('controls/gear/gear-down', 0);
 });
 
-#Move control from the rudder to the aileron's
-#to move towards desired headings.
-liftoff.then (func {
+#Move control from the rudder to the ailerons
+#for moving towards desired headings.
+liftoff.when (func {
     var height = getprop ('/position/altitude-ft');
     
     return height > 1000.0;
-}, func {
+}).then(func {
     #Switch to roll controlled heading
     setprop (uav, lks, 'heading', 'dg-heading-hold-roll');
     setprop (uav, pln, 'status', 'ready');
