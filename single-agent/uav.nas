@@ -87,7 +87,7 @@ var setup = func {
 var ready_to_tip_nose = func {
   var speed = getprop ('/velocities/airspeed-kt');
 
-  return speed >= 130.0;
+  return speed >= 140.0;
 };
 
 var tip_nose = func {
@@ -96,9 +96,9 @@ var tip_nose = func {
 
 var ready_to_rise = func {
   var speed = getprop ('/velocities/airspeed-kt');
-  var elevation = getprop ('/position/altitude-ft');
+  var elevation = getprop ('/position/altitude-agl-ft');
   
-  return (speed >= 140.0) and (elevation > 20.0);
+  return (speed >= 150.0) and (elevation > 20.0);
 };
 
 var rise = func {
@@ -124,7 +124,6 @@ var ready_withdraw_flaps1 = func {
 
 var withdraw_flaps1 = func {
   setprop ('/controls/flight/flaps', 0.033);
-
 };
 
 var ready_retract_flaps = func {
@@ -242,13 +241,16 @@ var liftoff = setup
     .then (rise);
 
 #Set the flaps to go down as we speed up.
-liftoff.when (ready_withdraw_flaps).then (withdraw_flaps)
-    .when (ready_withdraw_flaps1).then (withdraw_flaps1)
-    .when (ready_retract_flaps).then (retract_flaps);
+liftoff.when (ready_withdraw_flaps)
+       .then (withdraw_flaps)
+       .when (ready_withdraw_flaps1)
+       .then (withdraw_flaps1)
+       .when (ready_retract_flaps)
+       .then (retract_flaps);
 
 #Set how to get to our cruising position
 liftoff.when (func {
-    var alt = getprop ('/position/altitude-ft');
+    var alt = getprop ('/position/altitude-agl-ft');
     
     return alt > 10000.0;
 }).then(func {
@@ -273,7 +275,7 @@ liftoff.when (func {
         return a;
     };
 
-    var mode = getprop(uav, pln, 'mode');
+    var mode = getprop(uav, pln, 'mode');;
 
     #Check if within 500 ft of our target altitude
     return abs(alt - tgt) < 500.0 and mode == 'cruise';
@@ -295,7 +297,7 @@ liftoff.when (func {
 #Move control from the rudder to the ailerons
 #for moving towards desired headings.
 liftoff.when (func {
-    var height = getprop ('/position/altitude-ft');
+    var height = getprop ('/position/altitude-agl-ft');
     
     return height > 1000.0;
 }).then(func {
