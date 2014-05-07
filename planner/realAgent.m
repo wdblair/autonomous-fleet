@@ -97,10 +97,23 @@ classdef realAgent
         function self = sendCommand(self)
                         
             olong = self.location.x; olat = self.location.y;
-            nlong = self.goal.location.x; nlat = self.goal.location.y;
+            nlong = self.goal.location.y; nlat = self.goal.location.x;
             
-            gheading = atan2(nlat-olat,nlong-olong);
-            dist = sqrt((nlat-olat)^2+(nlong-olong)^2);
+            dlat = degtorad(nlat - olat);
+            dlong = degtorad(nlong - olong);
+            
+            lat1 = degtorad(olat);
+            lat2 = degtorad(nlat);
+            
+            y = sin(dlong) * cos(lat2);
+            x = (cos(lat1) * sin(lat2)) - (sin(lat1) * cos(lat2) * cos(dlong));
+            
+            gheading = mod(rad2deg(atan2(y, x)) + 360, 360);
+            
+            R = 6371;
+            a = (sin(dlat / 2) * sin(dlat / 2)) + (cos(lat1)  * cos(lat2)) * (sin(dlong / 2) * sin(dlong / 2));
+            c = 2 * atan2(sqrt(a), sqrt(1-a));
+            dist = R * c
             
             if self.location.z < 10000 == 1
                 % stay landed:
