@@ -13,6 +13,90 @@
 # Will Blair, George Chapman
 ### 
 
+var never = func {
+    return 0;
+};
+
+var noop = func {
+    return ;
+};
+
+##
+## Below is our interface to construct behavior trees.
+##
+
+# Create a behavior tree with no activation function.
+var make_tree = func () {
+    return {
+        active: never,
+        expire: never,
+        visit: noop,
+        #The sub trees we can visit from this node.
+        children: [],
+        # The function that determines under what conditions
+        # we may visit this node.
+        activates: func (activate) {
+            me.active = activate;
+
+            return me;
+        },
+        # The action to take when we visit this node
+        then: func (visit) {
+            me.visit = visit;
+
+            return me;
+        },
+        # Under what conditions should we no longer consider
+        # this node?
+        expires: func (expire) {
+            me.expire = expire;
+            
+            return me;
+        },
+        # Create a child for this node and specify under what
+        # conditions we may visit it.
+        when: func (activate) {
+            var tr = make_tree().activates(activate);
+            append(me.children, tr);
+            return tr;
+        }
+    };
+};
+
+# Search through the tree to fly the plane
+var search = func (frontier) {
+
+    if (size(frontier) == 0) {
+        return;
+    }
+    
+    var next_frontier = [];
+
+    foreach (var node; frontier) {
+        if (node.active ()) {
+            node.visit ();
+            foreach (var cnode; node.children) {
+                append (next_frontier, cnode);
+            }
+        } else if (node.expire()) {
+           # no longer consider this node.
+        } else {
+            append (next_frontier, node);
+        }
+    }
+
+    settimer (func {
+        search (next_frontier);
+    }, 1);
+};
+
+# Start a mission at the top of a behavior tree
+var start_mission = func (behavior) {
+    frontier = [behavior];
+    
+    search(frontier);
+};
+
 # Pitch
 # /uav/locks/altitude
 # on: pitch-hold
@@ -152,78 +236,6 @@ var ready_to_takeoff = func {
    return start == 'to/ga';
 };
 
-var never = func {
-    return 0;
-};
-
-var noop = func {
-    return ;
-};
-
-# Create a node in the tree.
-
-var make_tree = func () {
-    return {
-        active: never,
-        expire: never,
-        visit: noop,
-        children: [],
-        activates: func (activate) {
-            me.active = activate;
-
-            return me;
-        },
-        then: func (visit) {
-            me.visit = visit;
-
-            return me;
-        },
-        expires: func (expire) {
-            me.expire = expire;
-            
-            return me;
-        },
-        when: func (activate) {
-            var tr = make_tree().activates(activate);
-            append(me.children, tr);
-            return tr;
-        }
-    };
-};
-
-# Search through the tree to fly the plane
-var search = func (frontier) {
-
-    if (size(frontier) == 0) {
-        return;
-    }
-    
-    var next_frontier = [];
-
-    foreach (var node; frontier) {
-        if (node.active ()) {
-            node.visit ();
-            foreach (var cnode; node.children) {
-                append (next_frontier, cnode);
-            }
-        }
-        else {
-            append (next_frontier, node);
-        }
-    }
-
-    settimer (func {
-        search (next_frontier);
-    }, 1);
-};
-
-# Start a mission at the top of a behavior tree
-var start_mission = func (behavior) {
-    frontier = [behavior];
-    
-    search(frontier);
-};
-
 # Check whether we are ready to begin take off
 var begin_takeoff = func {
     var rdy = getprop('/uav/planner/mode');
@@ -284,7 +296,7 @@ liftoff.when (func {
     setprop (uav, stg, 'target-speed-kt', 300.0);
 });
 
-#Set the landing gear down
+#Pull the landing gear up
 liftoff.when (func {
     var speed = getprop ('/velocities/airspeed-kt');
     
