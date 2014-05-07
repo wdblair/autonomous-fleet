@@ -11,11 +11,13 @@
 # For MacOS X
 # export FG_ROOT=/Applications/Flightgear.app/Contents/Resources/data
 
-ln -s $PWD/777-autopilot-uav.xml $FG_ROOT/Aircraft/777-200/Systems/777-autopilot-uav.xml
-ln -s $PWD/uav.nas $FG_ROOT/Aircraft/777-200/Nasal/uav.nas
+FG_ROOT=/usr/share/games/flightgear
 
-sed -i .bak '/<b777>/ a\
-\<file\>Aircraft/777/Nasal/uav.nas\<\/file\>' $(FG_ROOT)/Aircraft/777-200/777-200ER-set.xml
+cp ./777-autopilot-uav.xml $FG_ROOT/Aircraft/777-200/Systems/777-autopilot-uav.xml
+cp ./uav.nas $FG_ROOT/Aircraft/777-200/Nasal/uav.nas
 
-sed -i .bak '/systems.xml\<\/path\>/ a\
-\<autopilot\><path\>Aircraft/777/Systems/777-autopilot-uav.xml\<\/path\>\<\/autopilot\>' $(FG_ROOT)/Aircraft/777/777-200ER-set.xml
+sed -i '/<b777>/ a\
+\<file\>Aircraft/777/Nasal/uav.nas\<\/file\>' $FG_ROOT/Aircraft/777-200/777-200ER-set.xml
+
+sed -i '/systems.xml\<\/path\>/ a\
+\<autopilot\><path\>Aircraft/777/Systems/777-autopilot-uav.xml\<\/path\>\<\/autopilot\>' $FG_ROOT/Aircraft/777-200/777-200ER-set.xml
