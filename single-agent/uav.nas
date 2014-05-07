@@ -63,8 +63,8 @@ var make_tree = func () {
     };
 };
 
-# Search through the tree to fly the plane
-var search = func (frontier) {
+# Traverse the tree to fly the plane
+var traverse = func (frontier) {
 
     if (size(frontier) == 0) {
         return;
@@ -86,7 +86,7 @@ var search = func (frontier) {
     }
 
     settimer (func {
-        search (next_frontier);
+        traverse (next_frontier);
     }, 1);
 };
 
@@ -94,7 +94,7 @@ var search = func (frontier) {
 var start_mission = func (behavior) {
     frontier = [behavior];
     
-    search(frontier);
+    traverse(frontier);
 };
 
 # Pitch
