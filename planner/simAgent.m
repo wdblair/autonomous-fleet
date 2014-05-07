@@ -29,13 +29,13 @@ classdef simAgent
     
     methods 
         
-        function self = simAgent(portNumber,airport, speed)
+        %% Contructor
+        function self = simAgent(portNumber,origin, speed)
             
             self.port = portNumber;
             self.hostname = 'localhost';        
             
-            
-            self.location = airport.location.copy;
+            self.location = origin;
             self.landed = true;
             
             if ~exist('speed','var')
@@ -45,19 +45,36 @@ classdef simAgent
             end
         end
         
+        %% Update Sensors
         function self = updateSensors(self, delta)
-        % delta should be in seconds:
+            % delta should be in seconds:
             if ~isempty(self.goal)
-                self.heading = atan2(self.goal.location.latitude_deg - self.location.latitude_deg, ...
-                                     self.goal.location.longitude_deg - self.location.longitude_deg);
+                self.heading = atan2(self.goal(1).location.y - self.location.x, ...
+                                     self.goal(1).location.y - self.location.x);
 
-                self.location.longitude_deg = self.location.longitude_deg + cos(self.heading)*self.speed*delta;
-                self.location.latitude_deg  = self.location.latitude_deg + sin(self.heading)*self.speed*delta;
-                self.location.elevation_ft = self.goal.location.elevation_ft;
-            end
+                 distance = sqrt((self.goal(1).location.y - self.location.x)^2 + ...
+                                     (self.goal(1).location.y - self.location.x)^2);
+                                    
+                self.location.x = self.location.x + cos(self.heading)*self.speed*delta;
+                self.location.y  = self.location.y + sin(self.heading)*self.speed*delta;
+                self.location.z = self.goal.location.z;
+
+                if (distance < 0.01)
+                    if (self.goal.landed == 1)
+                        self.location = self.goal(1);
+                        self.landed = 1;
+                    else
+                        self.loation = self.goal(1);
+                    end
+
+                    self.goal(1) = [];
+
+                end
             
+            end
         end
         
+        %%
         function sendCommand(self)
             % holder method Doesn't actually need to do anything
         end
