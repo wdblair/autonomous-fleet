@@ -39,7 +39,7 @@ classdef simAgent
             self.landed = true;
             
             if ~exist('speed','var')
-                self.speed = 590/(60*60);
+                self.speed = 1000*(590/(60*60*69));
             else
                 self.speed = speed;
             end
@@ -58,13 +58,18 @@ classdef simAgent
                 self.location.x = self.location.x + cos(self.heading)*self.speed*delta;
                 self.location.y  = self.location.y + sin(self.heading)*self.speed*delta;
                 self.location.z = self.goal.location.z;
+                
+                self.location.name = [];
+                self.location.index = [];
+                
+                self.landed = 0;
 
                 if (distance < 0.01)
                     if (self.goal.landed == 1)
-                        self.location = self.goal(1);
+                        self.location = self.goal(1).location;
                         self.landed = 1;
                     else
-                        self.loation = self.goal(1);
+                        self.location = self.goal(1).location;
                     end
 
                     self.goal(1) = [];

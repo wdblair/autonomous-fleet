@@ -21,16 +21,14 @@ classdef simTree
             ifExit = 0;
             % Expand:
             while ifExit==0
-                f_x = NaN(size(self.frontier));
-                for i = 1:length(self.frontier)
-                    f_x(i) = self.frontier(i).f_x;
-                end
+                % Each expansion seems to take about 7-10 seconds (@3 GHz, single compthread)
+                f_x = [self.frontier.f_x];
                 
                 [~,ind] = min(f_x);
                 
-                if numExpand ~= 0
-                   self.frontier(ind).state.update(delta);
-                end
+                %if numExpand ~= 0
+                %   self.frontier(ind).state.update(delta);
+                %end
                 
                 ch = self.frontier(ind).getChildren;
                 self.frontier(ind) = [];
@@ -52,16 +50,20 @@ classdef simTree
             
             % Make a choice
             iss = [self.frontier.isSuccess];
-            h = [self.frontier.heuristic];
+            f_x = [self.frontier.f_x];
 
-            if isempty(iss)  
-                [~,ind] = min(h);
+            if sum(iss)==0  
+                [~,ind] = min(f_x);
             else
-                h(~iss) = inf;
-                [~,ind] = min(h);
+                f_x(~iss) = inf;
+                [~,ind] = min(f_x);
             end
             
+            % Now reduce this simply to the next step, & return
             child = self.frontier(ind);
+            while ~isempty(child.parent.parent)
+                child = child.parent;
+            end
             
         end
     end

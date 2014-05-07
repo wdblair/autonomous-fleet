@@ -109,10 +109,12 @@ classdef realAgent
                 else
                     gmode = 'to/ga';
                 end
+                
             else
                 if (self.goal.location.z < 10000) && (dist < 1)
                     % land
                     gmode = 'land';
+                    
                 else
                     % stay and update goal heading
                     gmode = 'cruise';
@@ -124,6 +126,16 @@ classdef realAgent
                    num2str(gheading), ' ',...
                    num2str(35000)];
             unix(cmd)
+            
+            if strcmp('land',gmode)
+                 self.destroy(); 
+                % We had some problems with landing errors accumulating
+                % during long runs. Instead, we kill them when they should
+                % be landing, and reboot them at a later point. This should
+                % be fixed before using in real-life aircraft, as it would
+                % be expensive ... 
+            end
+            
         end
 
         function destroy(self)

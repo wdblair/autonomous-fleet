@@ -97,7 +97,7 @@ classdef simState
                 chil(i) = self.copy;
                 
                 for m = 1:length(isLanded)
-                    child(i).agents(isLanded(m)).goal.land = 1;
+                    chil(i).agents(isLanded(m)).goal.landed = 1;
                     chil(i).agents(isLanded(m)).goal.location = ... 
                         self.locations(inds{i}(m));
                 end
@@ -108,7 +108,10 @@ classdef simState
         
         %% Heuristic:
         function h_xt = get.h_x(self)
-            h_xt = self.time;
+            h_xt = 0;
+            for i = 1:length(self.orders)
+                h_xt = h_xt+self.distances(self.orders(i).dest.index, self.orders(i).location.index) / self.agents(1).speed;
+            end
         end
         
         %% Visualize

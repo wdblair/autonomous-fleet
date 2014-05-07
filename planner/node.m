@@ -6,6 +6,9 @@ classdef node
         f_x % estimated total cost
         h_x % estimated remaining cost
         parent
+        
+        isSuccess
+        isFailure
     end
     
     methods
@@ -18,17 +21,22 @@ classdef node
         %% copy:
         function cpObj = copy(self)
             % Perform a deep copy
-            cpObj.state = self.state;
-            cpObj.parent = self.parent;
-            cpObj.g_x = self.g_x;
+            cpObj = node(self.state, ...
+                         self.parent, ...
+                         self.g_x);
         end
         
+        %% Children 
         function ch = getChildren(self)
             [chState delta] = self.state.children;
-            for i = 1:length()
+            for i = 1:length(chState)
                 ch(i) = self.copy();
                 ch(i).state = chState(i);
                 ch(i).g_x = ch(i).g_x + delta(i);
+                
+                ch(i).state = ch(i).state.update(delta(i));
+                
+                ch(i).parent = self;
             end
         end
         
@@ -41,6 +49,20 @@ classdef node
         function f_x = get.f_x(self)
             f_x = self.g_x + self.h_x;
         end
+        
+        %% isSuccess:
+        function isS = get.isSuccess(self)
+            isS = (self.h_x == 0);
+        end
+        
+        
+        %% isFailure:
+        function isF = get.isFailure(self)
+           isF = sum(self.state.time > arrayfun(@(x) x.time, ...
+                     self.state.orders(:)));
+        end
+        
+        
     end
     
     

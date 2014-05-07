@@ -1,4 +1,4 @@
-function [map, path, cost] = makeMap(locs)
+function [map, cost, path] = makeMap(locs)
 
 %% Weather stuff:
 

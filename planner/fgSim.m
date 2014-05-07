@@ -22,7 +22,6 @@ classdef fgSim
             
             ifSim = ip.Results.ifSim;
             numAgents = ip.Results.numAgents;
-            plannerMethod = ip.Results.plannerMethod;
             initOrders = ip.Results.initOrders;
             howLong = ip.Results.howLong;            
             speed = ip.Results.speed;
@@ -46,9 +45,9 @@ classdef fgSim
                              'agents',           agents(:), ...
                              'map',              [], ...
                              'distances',        [], ...
-                             'orders',           self.simOrders(loc, initOrders), ...
                              'time',             0);
-             
+
+             self = self.simOrders(initOrders);
              % ----------------- Run the Simuation -----------------------%
              tStart = now;
              tEnd = tStart + howLong;
@@ -59,7 +58,7 @@ classdef fgSim
                      self = self.update;
                  end
                  
-                 self = self.iterate();
+                 self = self.iterate(planTime);
                  
                  if now > tEnd
                      ifExit = 1;
@@ -103,11 +102,13 @@ classdef fgSim
             child = tree.search();
             
             % execute
+            for i = 1:length(child)
+                self.state.agents(i).goal = child.state.agents(i).location;
+            end
             
-            % decide
+            % show
             self.state.visualize(1);
             
-            keyboard
         end
         
         
