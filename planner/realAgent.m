@@ -34,8 +34,9 @@ classdef realAgent
     methods 
         
         function self = realAgent(portNumber,airport)
+            
             % Tell it to work with server
-            cmd = 'fgfs --multiplay=out,1,localhost,5000 ';             
+            cmd = ['./run-fg.sh ' num2str(portNumber) ' --multiplay=out,1,localhost,5000 '];             
             
              % Tell it which port to report to
             cmd = [cmd '--multiplay=in,1,localhost,' num2str(portNumber),... 
@@ -57,6 +58,7 @@ classdef realAgent
             
             % Start up the simulator
             cmd = [cmd ' &'];
+            
             unix(cmd);                                                     
             
             %self.location.location.x = NaN;
@@ -124,6 +126,10 @@ classdef realAgent
             unix(cmd)
         end
 
+        function destroy(self)
+            killFile = ['./kill-fg.sh ' num2str(self.port)];
+            unix(killFile);
+        end
         
     end
     
